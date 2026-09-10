@@ -14,11 +14,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Extract QuestMate
+      - name: Check Android project
         run: |
-          unzip QuestMate-Android-Prototype.zip -d project
+          echo "Checking QuestMate project..."
+          ls -la
+          echo "------------------------"
 
-      - name: Set up Java
+          if [ ! -f "settings.gradle" ] && [ ! -f "settings.gradle.kts" ]; then
+            echo "ERROR: Android project files were not found."
+            echo "The repository needs the QuestMate Android project."
+            exit 1
+          fi
+
+      - name: Set up Java 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -29,12 +37,18 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Build APK
-        working-directory: project
-        run: gradle assembleDebug --no-daemon
+      - name: Build QuestMate APK
+        run: |
+          gradle assembleDebug --no-daemon
 
-      - name: Upload APK
+      - name: Find APK
+        run: |
+          echo "Looking for APK..."
+          find . -name "*.apk" -type f
+
+      - name: Upload QuestMate APK
         uses: actions/upload-artifact@v4
         with:
           name: QuestMate-APK
-          path: project/app/build/outputs/apk/debug/app-debug.apk
+          path: "**/build/outputs/apk/debug/*.apk"
+          if-no-files-found: error
